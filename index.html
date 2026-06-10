@@ -1,0 +1,1553 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, maximum-scale=1">
+<title>Bear Memo</title>
+
+<style>
+html, body{
+  overscroll-behavior:none;
+  height:100%;
+  overflow:hidden;
+  touch-action:manipulation;
+}
+
+
+
+body{
+  margin:0;
+  min-height:100dvh;
+  height:100dvh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  background:
+linear-gradient(
+  to bottom,
+  #e8dfcf 0px,
+  #e8dfcf 150px,
+  #ddd 150px,
+  #ddd 100%
+);
+
+  font-family:sans-serif;
+}
+
+#stage{
+  position:relative;
+  width:100vw;
+  height:100dvh;
+  max-width:420px;
+  max-height:560px;
+  background:#f5f0e6;
+  overflow:hidden;
+ touch-action:none; 
+}
+
+#stage, #paper, #paperBase{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* クマ画像（2枚重ねて切替） */
+#bearIdle, #bearHand, #bearNoHand{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:-24px;
+  width:440px;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+
+}
+
+#bearHand,
+#bearNoHand{
+ opacity:0; }
+
+.bearHandOn #bearHand{ opacity:1; }
+.bearHandOn #bearIdle{ opacity:0; }
+.bearHandOn #bearNoHand{ opacity:0; }
+
+.bearNoHandOn #bearNoHand{ opacity:1; }
+.bearNoHandOn #bearHand{ opacity:0; }
+.bearNoHandOn #bearIdle{ opacity:0; }
+
+
+/* 上の紙 */
+#paper{
+  position:absolute;
+  left:41px;
+  top:142px;
+  width:245px;
+  height:152px;
+  background:#f2e6c9;
+  border:1.5px solid #7a5f35;
+  z-index:10;
+  transform-origin:top center;
+  transition:transform .35s ease;
+  touch-action:none;
+}
+
+/* 下の紙 */
+#paperBase{
+  position:absolute;
+  left:41px;
+  top:142px;
+  width:245px;
+  height:152px;
+  background:#f2e6c9;
+  border:1.5px solid #7a5f35;
+  z-index:1;
+}
+
+/* めくれた状態 */
+#paper.flip{
+  clip-path:polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+  transform:translateY(-20px) scaleY(0.18);
+}
+
+/* textareaの標準UIを消す（斜線の原因） */
+textarea{
+  resize:none !important;
+  border:none !important;
+  outline:none !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  overflow-y:auto;
+  overflow-x:hidden;
+  font-size:20px;
+  padding:8px;
+  box-sizing:border-box;
+  line-height:1.6;
+  -webkit-overflow-scrolling:touch;
+ touch-action:pan-y;
+}
+
+/* 下の入力欄 */
+#baseText{
+  width:92%;
+  height:80%;
+}
+
+/* 上の入力欄 */
+#shopText{
+  width:92%;
+  height:80%;
+}
+
+/* パネル */
+#panel{
+  position:absolute;
+  left:16px;
+  right:16px;
+  bottom:0px;
+  height:200px;
+  background:#fff;
+  border:none;
+  border-radius:18px 18px 0 0;
+  padding:10px;
+  box-sizing:border-box;
+ box-shadow:0 -6px 24px rgba(0,0,0,.25);
+  z-index:50;
+}
+
+#addBtn{
+  width:120px;
+ padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#333;
+  color:#fff;
+  font-size:15px;
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);
+  transition:transform .08s ease, filter .08s ease, box-shadow .08s ease;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+
+ -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+
+#addBtn:active{
+  transform:translateY(2px) scale(0.99);
+  filter:brightness(0.92);
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+}
+
+ #shareBtn{
+ position:absolute;
+ top:305px;
+ left:70px;
+ width:64px;
+ height:34px;
+ border:none;
+ border-radius:17px;
+ background:#06c755;
+ color:#fff;
+ font-size:14px;
+ font-weight:700;
+box-shadow:0 2px 6px rgba(0,0,0,.18);
+-webkit-user-select:none;
+user-select:none;
+-webkit-touch-callout:none;
+touch-action:manipulation;
+
+}
+ 
+#shareBtn::before{
+ content:"";
+ position:absolute;
+ top:5px;
+ left:10px;
+ width:18px;
+ height:6px;
+ border-radius:999px;
+ background:rgba(255,255,255,.45);
+}
+
+#list{
+  margin-top:10px;
+  height:147px;
+  overflow:auto;
+  font-size:13px;
+  padding-bottom:14px;
+  box-sizing:border-box;
+}
+
+.item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 8px;
+  border-radius:10px;
+  background:#fff;
+  margin-bottom:8px;
+  border:1px solid rgba(0,0,0,.08);
+}
+
+#list,
+.item,
+.item .left,
+.item .left b,
+.item .meta,
+.item button{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+
+.item{
+  touch-action:manipulation;
+}
+
+.item .left{
+  flex:1;
+  min-width:0;
+}
+
+.item .left b{
+  font-size:17px;
+  font-weight:700;
+}
+
+.item .meta{
+  margin-left:auto;
+  font-size:13px;
+  font-weight:700;
+  opacity:.65;
+  white-space:nowrap;
+}
+
+.item button{
+  border:none;
+  background:#ffdddd;
+  border-radius:10px;
+  padding:4px 8px;
+  cursor:pointer;
+  font-size:22px;
+}
+
+ #itemCount{
+ margin-right:auto;
+ font-size:16px;
+ font-weight:bold;
+ color:#333;
+}
+
+.btnRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+ #clearListBtn{
+position:relative;
+overflow:hidden;
+background:#e57373;
+color:#fff;
+font-weight:700;
+border:none;
+border-radius:10px;
+padding:8px 12px;
+font-size:13px;
+-webkit-user-select:none;
+user-select:none;
+-webkit-touch-callout:none;
+touch-action:manipulation;
+transition:transform .15s ease, filter .2s
+ease;
+}
+
+#clearListBtn::after{
+content:"";
+position:absolute;
+left:0;
+top:0;
+height:100%;
+width:0%;
+background:rgba(255,255,255,0.3);
+transition:width 0.7s linear;
+}
+
+#clearListBtn.holding{
+background:#d32f2f;
+transform:scale(0.95);
+filter:brightness(0.9);
+}
+
+#clearListBtn.holding::after{
+width:100%;
+}
+
+#clearBtn{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  white-space:nowrap;
+  position:absolute;
+  top:295px;
+  left:50%;
+  transform:translateX(-50%);
+  min-height:44px;
+  width:100px;
+  padding:10px 16px;
+  border:none;
+  border-radius:22px;
+  background:#e57373;
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+  box-shadow:
+0 5px 0 #c95f5f,
+0 8px 16px rgba(0,0,0,.2);
+  z-index:20;
+}
+
+#clearBtn:active{
+  transform:translateX(-50%) translateY(3px);
+  box-shadow:
+    0 2px 0 #c95f5f,
+    0 4px 8px rgba(0,0,0,.16);
+}
+
+#shareBtn:active{
+  transform:translateY(3px);
+  box-shadow:
+    0 2px 0 #049944,
+    0 4px 8px rgba(0,0,0,.16);
+}
+
+#clearBtn::before{
+content:"";
+position:absolute;
+top:6px;
+left:14px;
+width:22px;
+height:7px;
+border-radius:999;
+background:rgba(255,255,255,.38);
+}
+
+#clearBtn.holding{
+  filter:brightness(0.92);
+  transform:translateX(-50%) scale(0.96);
+  box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+
+/* スコア */
+#scoreBox{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:16px;
+  background:rgba(255,255,255,0.75);
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:bold;
+  white-space:nowrap;
+}
+
+ #scoreBox, #scoreText{
+ -webkit-user-select: none;
+ user-select: none;
+ -webkit-touch-callout: none;
+ touch-action: manipulation;
+} 
+#scoreBox button{
+  width:34px;
+  height:26px;
+  padding:0;
+  border:1px solid rgba(0,0,0,.25);
+  border-radius:6px;
+  background:#fff;
+  font-size:28px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transform:scale(0.94);
+  filter:brightness(0.9);
+}
+
+#scoreBox button:active:not(:disabled){
+  transform:translateY(2px) scale(0.98);
+  filter:brightness(0.92);
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+}
+
+@media (max-width:480px){
+  #scoreBox button{
+    height:40px;
+    width:40px;
+    font-size:18px;
+  }
+}
+
+#scoreBox button .ch{
+  display:inline-block;
+  position:relative;
+}
+
+#scoreBox .okBtn .ch{ top:1px; 
+ text-shadow:
+ 1px 0 0 currentColor,
+ -1px 0 0 currentColor,
+ 0 1px 0 currentColor,
+ 0 -1px 0 currentColor;}
+
+#scoreBox .okBtn{
+  width:40px;
+ height:40px;
+ border-radius:8px;
+ background:#dff5e4 !important;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ padding:0;
+ border:1px solid #3aa65a;
+}
+
+#scoreBox .okBtn .circle{
+ width:18px;
+ height:18px;
+ border-radius:50%;
+ border:3px solid #000;
+ box-sizing:border-box;
+ display:block;
+}
+
+#scoreBox .ngBtn{
+  font-weight:700;
+  font-size:32px;
+  transform:none;
+}
+
+#scoreBox .ngBtn .ch{ top:0px; 
+ position:relative;
+}
+
+#scoreBox .undoBtn .ch{
+  font-size: 38px !important;   /* ← 文字だけ大きく */
+  line-height: 1 !important;    /* ← important を正しく */
+  display: inline-block;        /* block だと崩れやすい */
+  transform: translateY(-2px);   /* 位置調整（上げたいなら -2px） */
+}
+
+#scoreBox .undoBtn:disabled{
+  opacity:0.25;
+  filter:grayscale(1);
+}
+
+#scoreBox .undoBtn{
+  background:#ffe5e5;
+  border:1px solid #d46a6a;
+  
+}
+
+#scoreBox.holdingScore{
+  transform:scale(0.98);
+  filter:brightness(0.92);
+}
+
+#scoreBox .okBtn.flash{ animation:okFlash .25s ease; }
+
+#scoreText.good{ color:#1f7a3a; }
+
+@keyframes okFlash{
+  0%{ box-shadow:0 0 0 rgba(60,180,90,0); }
+  50%{ box-shadow:0 0 14px rgba(60,180,90,.9); }
+  100%{ box-shadow:0 0 0 rgba(60,180,90,0); }
+}
+
+#scoreText.pop{ animation:scorePop .28s ease; }
+
+@keyframes scorePop{
+  0%{ transform:scale(1); }
+  40%{ transform:scale(1.18); }
+  100%{ transform:scale(1); }
+}
+
+#scoreText.gold{
+  color:#c99700;
+  text-shadow:0 0 6px rgba(255,215,0,.6);
+}
+
+#scoreText.bigpop{ animation:scoreBigPop .35s ease; }
+
+@keyframes scoreBigPop{
+  0%{ transform:scale(1); }
+  40%{ transform:scale(1.35); }
+  100%{ transform:scale(1); }
+}
+
+#scoreBox .okBtn{
+ background:#dff5e4 !important;
+ border:1px solid #3aa65a;
+ }
+
+ #startDate{
+ font-size:12px;
+ opacity:0.7;
+ }
+
+ #scoreInfo{
+ display:flex;
+ flex-direction:column;
+ margin-right:6px;
+}
+
+#itemPreviewCount{
+  position:absolute;
+  top:8px;
+  right:10px;
+  z-index:20;
+  font-size:18px;
+  font-weight:700;
+  color:#7a5f35;
+  background:rgba(242,230,201,0.9);
+  padding:2px 6px;
+  border-radius:8px;
+}
+
+#toast{
+  position:absolute;
+  bottom:230px;
+  left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(0,0,0,0.75);
+  color:#fff;
+  padding:10px 16px;
+  border-radius:20px;
+  font-size:14px;
+  opacity:0;
+  pointer-events:none;
+  transition:all .3s ease;
+  z-index:9999;
+}
+
+#toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+#bearSpeech{
+  position:absolute;
+  top:80px;
+  right:210px;
+  background:#fffdf2;
+  border:2px solid #7a5f35;
+  border-radius:18px;
+  padding:10px 16px;
+  font-size:17px;
+  font-weight:700;
+  color:#333;
+  z-index:40;
+  opacity:0;
+  transform:scale(0.95);
+  transition:opacity .25s ease, transform .25s ease;
+  pointer-events:none;
+}
+
+#bearSpeech::after{
+  content:"";
+  position:absolute;
+  right:-7px;
+  top:11px;
+  width:14px;
+  height:14px;
+  background:#fffdf2;
+  border-right:2px solid #7a5f35;
+  border-top:2px solid #7a5f35;
+  transform:rotate(45deg);
+}
+
+#bearSpeech.show{
+  opacity:1;
+  transform:scale(1);
+}
+
+#credit{
+  position:absolute;
+  top:319px;
+ left:89%;
+  transform:translateX(-50%);
+  font-size:10px;
+  color:#777;
+  opacity:0.8;
+  z-index:999;
+  user-select:none;
+  -webkit-user-select:none;
+}
+</style>
+</head>
+
+<body>
+<div id="stage" tabindex="-1">
+<div id="credit">© pooyan26 2026</div>
+<div id="bearSpeech">思いだした？</div>
+  <div id="scoreBox">
+
+ <div id="scoreInfo">
+    <span id="scoreText">0件中0件</span>
+    <div id="startDate"></div>
+  </div>
+    <button type="button" class="okBtn"><span class="circle" aria-hidden="true"></span></button>
+    <button type="button" class="ngBtn"><span class="ch">×</span></button>
+    <button type="button" class="undoBtn"disabled><span class="ch">↩</span></button>
+  </div>
+
+  <img id="bearIdle" src="bear.png" alt="">
+  <img id="bearHand" src="bear.hand.back.png" alt="">
+  <img id="bearNoHand" src="bear.nohand.png" alt="">
+  <div id="paperBase">
+    <textarea id="baseText" placeholder="1行に１商品ずつ入力"></textarea>
+  </div>
+
+  <div id="paper">
+    <div id="itemPreviewCount">0品</div>
+    <textarea id="shopText" placeholder="買い物先"></textarea>
+  </div>
+
+<button id="shareBtn" type="button">共有</button>
+  <button id="clearBtn" type="button">リセット</button>
+
+  <div id="panel">
+    <div class="btnRow">
+      <button id="addBtn" type="button">追加</button>
+  
+    <div id="itemCount">0件</div>
+ <button id="clearListBtn" type="button">全削除
+</button>
+    </div>
+ <div id="list"></div>
+  </div>
+
+<script>
+/* ===== Audio（1回だけ作って使い回す） ===== */
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+function playBeep(freq = 600, duration = 0.08){
+  const ctx = getAudioCtx();
+  if(ctx.state === "suspended") ctx.resume();
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.value = freq;
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+  osc.start();
+  osc.stop(ctx.currentTime + duration);
+}
+
+/* 紙っぽい「サラッ」音 */
+function playPaperSound(type = "flip"){
+  const ctx = getAudioCtx();
+  if(ctx.state === "suspended") ctx.resume();
+
+  const duration = (type === "flip") ? 0.13 : 0.16;
+
+  const bufferSize = Math.floor(ctx.sampleRate * duration);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for(let i=0;i<bufferSize;i++){
+    const t = i / bufferSize;
+    const envelope = (type === "flip") ? (1 - t) * (1 - t) : t * (1 - t);
+    data[i] = (Math.random()*2 - 1) * 0.35 * envelope;
+  }
+
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+
+ const filter = ctx.createBiquadFilter();
+filter.type = "lowpass";
+
+// back と同じ方向の音質にして、flipだけ少しだけ明るくする
+filter.frequency.value = (type === "flip") ? 1800 : 1400;
+filter.Q.value = 0.7; // 少しだけ輪郭（強すぎると不自然）
+
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.30;
+
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  src.start();
+}
+
+/* ===== ここからアプリ本体 ===== */
+window.addEventListener("DOMContentLoaded", () => {
+
+function showToast(msg){
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+
+  setTimeout(()=>{
+    toast.classList.remove("show");
+  }, 1200);
+}
+
+function showBearSpeech(msg){
+  const el = document.getElementById("bearSpeech");
+  if(!el) return;
+
+  el.textContent = msg;
+  el.classList.add("show");
+
+  clearTimeout(window.bearSpeechTimer);
+  window.bearSpeechTimer = setTimeout(()=>{
+    el.classList.remove("show");
+  }, 1400);
+}
+
+  const stage    = document.getElementById("stage");
+  const paper    = document.getElementById("paper");
+  const bearIdle = document.getElementById("bearIdle");
+  const bearHand = document.getElementById("bearHand");
+  const shopEl   = document.getElementById("shopText");
+  const itemEl   = document.getElementById("baseText");
+  shopEl.addEventListener("input", saveAll);
+  itemEl.addEventListener("input", saveAll);
+  const addBtn   = document.getElementById("addBtn");
+  const shareBtn = document.getElementById("shareBtn");
+
+
+shareBtn.addEventListener("contextmenu", (e)=>{
+  e.preventDefault();
+});
+
+  const listEl   = document.getElementById("list");
+ listEl.addEventListener("contextmenu",
+(e)=>{
+ e.preventDefault();
+});
+  const clearBtn = document.getElementById("clearBtn");
+ const clearListBtn = document.getElementById("clearListBtn");
+
+clearListBtn.addEventListener("touchstart",
+(e)=>{
+e.preventDefault();
+}, { passive:false });
+
+ clearListBtn.addEventListener("contextmenu",
+(e)=>{
+e.preventDefault();
+});
+
+ let clearListTimer = null;
+let startX = 0;
+let startY = 0;
+
+const CLEAR_LIST_HOLD_MS = 700;
+const CLEAR_LIST_MOVE_CANCEL_PX = 16;
+
+clearListBtn.addEventListener("pointerdown", (e)=>{
+
+e.preventDefault();
+e.stopPropagation();
+
+  startX = e.clientX;
+  startY = e.clientY;
+
+  clearListBtn.classList.add("holding");
+
+  clearListTimer = setTimeout(()=>{
+    listEl.innerHTML = "";
+    updateItemCount();
+    saveAll();
+
+    if(navigator.vibrate) navigator.vibrate([30, 40, 30]);
+
+showToast("すべて削除しました");
+playBeep(300, 0.08);
+
+clearListBtn.style.transform = "scale(1.1)";
+setTimeout(()=>{
+  clearListBtn.style.transform = "";
+}, 120);
+
+
+    clearListBtn.classList.remove("holding");
+    clearListTimer = null;
+  }, CLEAR_LIST_HOLD_MS);
+});
+
+clearListBtn.addEventListener("pointermove", (e)=>{
+  if(!clearListTimer) return;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  if(Math.hypot(dx, dy) > CLEAR_LIST_MOVE_CANCEL_PX){
+    clearTimeout(clearListTimer);
+    clearListTimer = null;
+    clearListBtn.classList.remove("holding");
+  }
+});
+
+["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+  clearListBtn.addEventListener(ev, (e)=>{
+   e.preventDefault();
+
+    if(clearListTimer){
+      clearTimeout(clearListTimer);
+      clearListTimer = null;
+    }
+    clearListBtn.classList.remove("holding");
+  });
+});
+
+  const paperBase= document.getElementById("paperBase");
+
+  const scoreText = document.getElementById("scoreText");
+  const okBtn     = document.querySelector(".okBtn");
+  const ngBtn     = document.querySelector(".ngBtn");
+  const undoBtn   = document.querySelector(".undoBtn");
+  const scoreBox  = document.getElementById("scoreBox");
+const HOLD_BTN_MS = 150;
+
+function setupHoldButton(btn, action){
+  let timer = null;
+  let startX = 0;
+  let startY = 0;
+  const CANCEL_MOVE_PX = 12;
+
+  function cancel(){
+    if(timer) clearTimeout(timer);
+    timer = null;
+    btn.classList.remove("holdingBtn");
+  }
+
+  btn.addEventListener("pointerdown", (e)=>{
+    if(btn.disabled) return;
+
+    e.preventDefault();
+    startX = e.clientX;
+    startY = e.clientY;
+    btn.classList.add("holdingBtn");
+
+    timer = setTimeout(()=>{
+      btn.classList.remove("holdingBtn");
+      timer = null;
+      action();
+    }, HOLD_BTN_MS);
+
+  });
+
+  btn.addEventListener("pointermove", (e)=>{
+    if(!timer) return;
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if(Math.hypot(dx, dy) > CANCEL_MOVE_PX){
+      cancel();
+    }
+  });
+
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+    btn.addEventListener(ev, cancel);
+  });
+}
+
+setupHoldButton(okBtn, ()=> window.checkAnswer(true));
+setupHoldButton(ngBtn, ()=> window.checkAnswer(false));
+setupHoldButton(undoBtn, ()=> window.undoAnswer());
+
+  const KEY = "bearMemo_v1";
+ const START_KEY = "bearMemo_startDate";
+
+function initStartDate(){
+  const start = localStorage.getItem(START_KEY);
+ 
+ document.getElementById("startDate").innerText = start ? "開始: " + start : "";
+} 
+
+function ensureStartDate(){
+  let start = localStorage.getItem(START_KEY);
+  if(start) return;
+
+  const now = new Date();
+  start =
+    now.getFullYear() + "/" +
+    String(now.getMonth()+1).padStart(2,"0") + "/" +
+    String(now.getDate()).padStart(2,"0");
+
+  localStorage.setItem(START_KEY, start);
+  document.getElementById("startDate").innerText = "開始: " + start;
+}
+
+  
+ function closeKeyboard(){
+  // 今フォーカスしてるやつを外す
+  if (document.activeElement && document.activeElement.blur) {
+    document.activeElement.blur();
+  }
+  shopEl.blur();
+  itemEl.blur();
+
+  // textarea から逃がす（stage に tabindex が必要）
+  stage.focus({ preventScroll: true });
+
+  // Android保険
+  requestAnimationFrame(() => {
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+    stage.focus({ preventScroll: true });
+
+   updateItemCount();
+  initStartDate();
+  });
+}
+
+ let vibeLock = false;
+  if(!stage || !paper || !bearIdle || !bearHand || !shopEl || !itemEl || !addBtn || !listEl || !clearBtn || !paperBase || !scoreText || !okBtn || !ngBtn || !undoBtn){
+    alert("要素が見つからないID/classがあります。HTMLのid/classを確認してね");
+    return;
+  }
+
+  /* ===== 長押しリセット ===== */
+  let resetTimer = null;
+  let pressX = 0, pressY = 0;
+  let resetPointerId = null;
+
+  const MOVE_CANCEL_PX = 12;
+  const HOLD_MS = 650;
+
+  function cancelReset(){
+    if(resetTimer) clearTimeout(resetTimer);
+    resetTimer = null;
+    clearBtn.classList.remove("holding");
+  vibeLock = false;
+
+    if(resetPointerId !== null){
+      try{ clearBtn.releasePointerCapture(resetPointerId); }catch(e){}
+      resetPointerId = null;
+    }
+  }
+
+  clearBtn.addEventListener("pointerdown", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+
+    pressX = e.clientX;
+    pressY = e.clientY;
+    clearBtn.classList.add("holding");
+
+    resetPointerId = e.pointerId;
+    try{ clearBtn.setPointerCapture(resetPointerId); }catch(e){}
+
+    resetTimer = setTimeout(()=>{
+      setState(false);
+      shopEl.value = "";
+      itemEl.value = "";
+    updateItemPreviewCount();
+      shopEl.blur();
+      localStorage.removeItem(KEY);
+     initStartDate();
+      cancelReset();
+      playBeep(500, 0.06);
+    }, HOLD_MS);
+  });
+
+  clearBtn.addEventListener("pointermove", (e)=>{
+    if(!resetTimer) return;
+    const dx = e.clientX - pressX;
+    const dy = e.clientY - pressY;
+    if(Math.hypot(dx, dy) > MOVE_CANCEL_PX) cancelReset();
+  });
+
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+    clearBtn.addEventListener(ev, cancelReset);
+  });
+
+ 
+function setState(flipped){
+  const before = paper.classList.contains("flip");
+  if(before === flipped) return;
+
+  // まず手なしは消す
+  stage.classList.remove("bearNoHandOn");
+
+  if(flipped){
+    // めくり中は手あり
+    stage.classList.add("bearHandOn");
+  }else{
+    // 戻す時も最初は手あり
+   stage.classList.remove("bearNoHandOn");
+    stage.classList.add("bearHandOn");
+
+ setTimeout(()=>{
+if(!paper.classList.contains("flip")){
+stage.classList.remove("bearHandOn");
+}
+}, 120);
+  }
+
+  paper.classList.toggle("flip", flipped);
+  shopEl.disabled = flipped;
+
+  if(before !== flipped){
+    playPaperSound(flipped ? "flip" : "back");
+  }
+}
+paper.addEventListener("transitionend", (e)=>{
+  if(e.propertyName !== "transform") return;
+
+  const flipped = paper.classList.contains("flip");
+
+  if(flipped){
+    // 完全にめくれた後だけ手なし
+    stage.classList.remove("bearHandOn");
+    stage.classList.add("bearNoHandOn");
+  }else{
+    // 完全に戻ったら通常
+    stage.classList.remove("bearHandOn");
+    stage.classList.remove("bearNoHandOn");
+  }
+});
+
+
+
+
+
+
+/* ===== 画面端〜端でめくる（stageで拾う：touch版・確実） ===== */
+let sY = 0;
+let sX = 0;
+let dragging = false;
+let touchBlocked = false;
+
+const FLIP_LEFT_PX = 80;
+
+function blockedAtPoint(x, y){
+
+  if(x <= FLIP_LEFT_PX) return false;
+
+  const el = document.elementFromPoint(x, y);
+  return !!(el && el.closest("textarea, #paper, #paperBase, #panel, #scoreBox, #scoreText, button, #list"));
+}
+
+stage.addEventListener("touchstart", (e)=>{
+  const t = e.touches[0];
+
+  touchBlocked = blockedAtPoint(t.clientX, t.clientY);
+  if(touchBlocked) return;   // ★ preventDefaultしない！
+
+  sY = t.clientY;
+  sX = t.clientX;
+  dragging = false;
+}, { passive:true });         // ★ passive:true でOK
+
+
+
+
+stage.addEventListener("touchmove", (e)=>{
+  if(touchBlocked) return;
+
+  const t = e.touches[0];
+  const dy = t.clientY - sY;
+  const dx = t.clientX - sX;
+
+  if(Math.abs(dy) > 10 && Math.abs(dx) < 140){
+    dragging = true;
+    if(document.activeElement && document.activeElement.tagName === "TEXTAREA"){
+      document.activeElement.blur();
+    }
+    e.preventDefault();
+  }
+}, { passive:false });
+
+
+stage.addEventListener("touchend", (e)=>{
+  if(touchBlocked){ touchBlocked = false; return; }
+
+  if(!dragging) return;
+  const t = e.changedTouches[0];
+  const dy = t.clientY - sY;
+
+  const flipped = paper.classList.contains("flip");
+  if(dy < -20 && !flipped) setState(true);
+  if(dy >  20 &&  flipped) setState(false);
+}, { passive:true });
+
+stage.addEventListener("touchcancel", ()=>{
+  touchBlocked = false;
+  dragging = false;
+}, { passive:true });
+
+
+
+
+  /* ===== 画面端〜端でめくる（stageで拾う：pointer版のみ） ===== */
+  let pDown = false;
+  let pStartY = 0;
+  let pStartX = 0;
+  let pDragging = false;
+  let pointerBlocked = false;
+
+  function isBlockedEl(el){
+    return !!(el && el.closest("#panel, #scoreBox, button, #list"));
+  }
+
+
+  /* ===== 追加 ===== */
+  addBtn.addEventListener("click", (e)=>{
+   e.preventDefault();
+  e.stopPropagation();
+    const shop  = shopEl.value.trim();
+    const items = itemEl.value.trim();
+    if(!shop || !items) return;
+
+    const now = new Date();
+    const dateText =
+      now.getFullYear() + "/" +
+      String(now.getMonth()+1).padStart(2,"0") + "/" +
+      String(now.getDate()).padStart(2,"0");
+
+    if(listEl.children.length >= 100){
+      const last = listEl.lastElementChild;
+      if(last) last.remove();
+    }
+
+    setState(false);
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.dataset.shop = shop;
+    div.dataset.items = items;
+    div.dataset.date = dateText;
+
+    div.innerHTML = `
+      <span class="left"><b>${escapeHtml(shop)}</b></span>
+      <span class="meta">${dateText}</span>
+      <button class="delBtn" type="button">×</button>`;
+
+    listEl.prepend(div);
+   updateItemCount();
+  
+    // 追加したあと、キーボードを確実に閉じる
+shopEl.value = "";
+itemEl.value = "";
+updateItemPreviewCount();
+closeKeyboard();
+if (document.activeElement && document.activeElement.blur) {
+  document.activeElement.blur();
+}
+shopEl.blur();
+itemEl.blur();
+
+// フォーカスを textarea から逃がす
+stage.focus({ preventScroll: true });
+
+// Android対策
+requestAnimationFrame(() => {
+  if (document.activeElement && document.activeElement.blur) {
+    document.activeElement.blur();
+  }
+  stage.focus({ preventScroll: true });
+});
+
+
+    playBeep(620, 0.05);
+   saveAll();
+  updateItemCount();
+  });
+
+ shareBtn.addEventListener("click", async () => {
+
+  const text =
+    "【買い物メモ】\n" +
+    (shopEl.value || "") + "\n\n" +
+    (itemEl.value || "");
+
+  if(!text.trim()) return;
+
+  if(navigator.share){
+    try{
+      await navigator.share({ text });
+      playBeep(650, 0.05);
+      return;
+    }catch(e){}
+  }
+
+  try{
+    await navigator.clipboard.writeText(text);
+     showToast("コピーしました");
+   playBeep(650, 0.05);
+  }catch(e){
+    alert("共有もコピーもできませんでした。\n下の内容を手動でコピーしてください。\n\n" + text);
+  }
+
+});
+
+
+  listEl.addEventListener("click", (e)=>{
+    if(e.target.classList.contains("delBtn")){
+      const row = e.target.closest(".item");
+      if(row) row.remove();
+      playBeep(280, 0.06);
+     saveAll();
+     updateItemCount();
+      return;
+    }
+
+    const row = e.target.closest(".item");
+    if(!row) return;
+
+    setState(false);
+    setTimeout(()=>{
+      shopEl.value = row.dataset.shop || "";
+      itemEl.value = row.dataset.items || "";
+      updateItemPreviewCount();
+      closeKeyboard();
+
+      showBearSpeech("思いだした？");
+    }, 80);
+  });
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+function getItemLineCount(){
+ return itemEl.value
+ .split("\n")
+ .map(s => s.trim())
+ .filter(Boolean).length;
+}
+  
+function updateItemPreviewCount(){
+  const previewEl = document.getElementById("itemPreviewCount");
+  if(!previewEl) return;
+
+  const count = getItemLineCount();
+  previewEl.textContent = count + "品";
+}
+ 
+itemEl.addEventListener("input", ()=>{
+  updateItemPreviewCount();
+});
+
+ function updateItemCount(){
+  const countEl = document.getElementById("itemCount");
+  if(!countEl) return;
+
+  const count = listEl.querySelectorAll(".item").length;
+  countEl.textContent = count + "件";
+}
+
+
+/* ===== スコア（○× + undo） ===== */
+let total = 0;
+let correct = 0;
+let lastAnswer = null;
+let prevRate = 0;
+
+// ===== バイブ制御（長押し中は鳴らさない）=====
+
+function vibrate10(){
+  if(vibeLock) return;
+  if(navigator.vibrate) navigator.vibrate(10);
+}
+
+function updateScore(){
+  const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  scoreText.innerText = `${correct}件 / ${total}件（${rate}%）`;
+  undoBtn.disabled = (lastAnswer === null);
+
+  scoreText.classList.remove("good","gold");
+
+  if(rate >= 90){
+    scoreText.classList.add("gold");
+  }else if(rate >= 70){
+    scoreText.classList.add("good");
+  }
+
+  if(rate >= 90 && prevRate < 90){
+    scoreText.classList.add("bigpop");
+    setTimeout(()=> scoreText.classList.remove("bigpop"), 350);
+    playBeep(900, 0.12);
+  }else if(rate >= 70 && prevRate < 70){
+    scoreText.classList.add("pop");
+    setTimeout(()=> scoreText.classList.remove("pop"), 280);
+    playBeep(760, 0.08);
+  }
+
+  prevRate = rate;
+}
+
+function flashOk(){
+  okBtn.classList.add("flash");
+  setTimeout(()=> okBtn.classList.remove("flash"), 250);
+}
+
+window.checkAnswer = (isCorrect) => {
+ ensureStartDate();
+  vibrate10();
+
+  lastAnswer = isCorrect;
+  total++;
+
+  if(isCorrect){
+    correct++;
+    flashOk();
+    playBeep(700, 0.05);
+
+setTimeout(()=>{
+  playBeep(1100, 0.06);
+}, 40);
+  }else{
+    playBeep(350, 0.07);
+  }
+
+  updateScore();
+ saveAll();
+};
+
+window.undoAnswer = () => {
+  if(lastAnswer === null) return;
+
+  vibrate10();
+  playBeep(520, 0.05);
+
+  total--;
+  if(lastAnswer) correct--;
+  lastAnswer = null;
+  updateScore();
+  saveAll();
+};
+
+let scoreResetTimer = null;
+let myVibeTimer = null;
+
+let holdStartX = 0, holdStartY = 0;
+const CANCEL_MOVE_PX = 12;
+
+const MY_VIBE_PATTERN = [20, 40, 20]; // 合計80ms
+const MY_VIBE_TOTAL = MY_VIBE_PATTERN.reduce((a,b)=>a+b,0);
+
+// OSのブルッが来る体感に合わせて調整（だいたい500〜600ms付近）
+const MY_VIBE_START_MS = 650;   // 自前バイブを鳴らすタイミング
+const RESET_AFTER_MYVIBE_MS = 40; // 自前バイブ後、少し余韻を置いて初期化
+
+scoreBox.addEventListener("pointerdown", (e)=>{
+ holdStartX = e.clientX;
+ holdStartY = e.clientY;
+  if(e.target.closest("button")) return;
+
+  e.preventDefault();
+  vibeLock = true;                 // 長押し中は他のvibrate10を止める
+  scoreBox.classList.add("holdingScore");
+
+  // ① 自前バイブ（OSバイブの「後」に来るように）
+  myVibeTimer = setTimeout(()=>{
+    if(navigator.vibrate) navigator.vibrate(MY_VIBE_PATTERN);
+  }, MY_VIBE_START_MS);
+
+  // ② 初期化（自前バイブの“最後”あたりで）
+  scoreResetTimer = setTimeout(()=>{
+    total = 0;
+    correct = 0;
+    lastAnswer = null;
+    prevRate = 0;
+
+   localStorage.removeItem(START_KEY);
+  
+document.getElementById("startDate").innerText = "";
+
+    updateScore();
+    saveAll();
+    playBeep(400, 0.08);
+    cancelScoreReset();
+  }, MY_VIBE_START_MS + MY_VIBE_TOTAL + RESET_AFTER_MYVIBE_MS);
+});
+
+function cancelScoreReset(){
+  if(scoreResetTimer) clearTimeout(scoreResetTimer);
+  if(myVibeTimer) clearTimeout(myVibeTimer);
+  scoreResetTimer = null;
+  myVibeTimer = null;
+  scoreBox.classList.remove("holdingScore");
+  vibeLock = false;
+}
+
+["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+  scoreBox.addEventListener(ev, cancelScoreReset);
+});
+
+
+scoreBox.addEventListener("pointermove", (e)=>{
+  if(!scoreResetTimer) return;
+
+  const dx = e.clientX - holdStartX;
+  const dy = e.clientY - holdStartY;
+
+  if(Math.hypot(dx, dy) > CANCEL_MOVE_PX){
+    cancelScoreReset();
+  }
+});
+
+
+updateScore();
+
+
+// ===== 自動保存（localStorage）=====
+function saveAll(){
+  const data = {
+    shop: shopEl.value,
+    items: itemEl.value,
+    list: Array.from(listEl.querySelectorAll(".item")).map(row => ({
+      shop: row.dataset.shop || "",
+      items: row.dataset.items || "",
+      date: row.dataset.date || ""
+    })),
+    score: { total, correct, lastAnswer, prevRate }
+  };
+  localStorage.setItem(KEY, JSON.stringify(data));
+}
+
+function loadAll(){
+  const raw = localStorage.getItem(KEY);
+  if(!raw) return;
+  try{
+    const data = JSON.parse(raw);
+
+    shopEl.value = data.shop || "";
+    itemEl.value = data.items || "";
+
+    // リスト復元
+    listEl.innerHTML = "";
+    (data.list || []).forEach(obj => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.dataset.shop = obj.shop || "";
+      div.dataset.items = obj.items || "";
+      div.dataset.date = obj.date || "";
+      div.innerHTML = `
+        <span class="left"><b>${escapeHtml(div.dataset.shop)}</b></span>
+        <span class="meta">${div.dataset.date}</span>
+        <button class="delBtn" type="button">×</button>`;
+      listEl.appendChild(div);
+    });
+
+    // スコア復元
+    if(data.score){
+      total = data.score.total || 0;
+      correct = data.score.correct || 0;
+      lastAnswer = (data.score.lastAnswer ?? null);
+      prevRate = data.score.prevRate || 0;
+    }
+
+    updateScore();
+  }catch(e){
+    // 壊れてたら無視
+  }
+}
+
+loadAll();
+updateScore();
+initStartDate();
+updateItemCount();
+updateItemPreviewCount();
+});
+
+
+
+</script>
+
+<div id="toast">すべて削除しました</div>
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
