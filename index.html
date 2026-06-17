@@ -1015,7 +1015,7 @@ function ensureStartDate(){
       itemEl.value = "";
     updateItemPreviewCount();
       shopEl.blur();
-      localStorage.removeItem(KEY);
+      saveAll();
      initStartDate();
       cancelReset();
       playBeep(500, 0.06);
