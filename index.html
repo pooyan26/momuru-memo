@@ -1393,7 +1393,16 @@ setTimeout(()=>{
 }, 40);
   }else{
     playBeep(350, 0.07);
+const ngMessages = [
+  "気にするな",
+  "次はいける",
+  "ドンマイ！",
+  "また挑戦！"
+];
 
+showBearSpeech(
+  ngMessages[Math.floor(Math.random() * ngMessages.length)]
+);
     
   }
 
