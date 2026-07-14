@@ -1374,7 +1374,17 @@ window.checkAnswer = (isCorrect) => {
     correct++;
     flashOk();
     playBeep(700, 0.05);
-  showBearSpeech("やるじゃない！");
+  const okMessages = [
+  "やるじゃない",
+  "完璧！",
+  "ナイス！",
+  "その調子！",
+  "よく覚えてた！"
+];
+
+showBearSpeech(
+  okMessages[Math.floor(Math.random() * okMessages.length)]
+);
 
   
 
