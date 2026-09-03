@@ -1,6 +1,6 @@
 {
   "name": "モムオメモ",
-  "short_name": "モムオ",
+  "short_name": "モムオメモ",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
